@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Game</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #43cea2, #185a9d);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .quiz-container {
+      background-color: #1f2937;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.4);
+      max-width: 700px;
+      width: 100%;
+      transition: all 0.3s ease-in-out;
+    }
+    h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .options {
+      list-style: none;
+      padding: 0;
+    }
+    .options li {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      background: #374151;
+      padding: 12px;
+      border-radius: 10px;
+      transition: 0.3s ease;
+      cursor: pointer;
+    }
+    label:hover {
+      background: #2563eb;
+    }
+    input[type="radio"],
+    input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      background: #374151;
+      color: #fff;
+      margin-top: 5px;
+    }
+    button {
+      background-color: #10b981;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 20px;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #059669;
+    }
+    #result {
+      font-size: 18px;
+      margin-top: 25px;
+    }
+    .correct {
+      color: #10b981;
+      font-weight: bold;
+    }
+    .wrong {
+      color: #ef4444;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-container">
+    <h2 id="question">Loading...</h2>
+    <form id="quiz-form" onsubmit="event.preventDefault(); submitAnswer();">
+      <ul class="options" id="options-list"></ul>
+      <button type="submit" id="submit-btn">Submit</button>
+    </form>
+    <div id="result"></div>
+    <button onclick="restartQuiz()" id="restart-btn" class="hidden">Restart Quiz</button>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        type: "radio",
+        question: "Which planet is known as the Red Planet?",
+        options: ["Earth", "Mars", "Jupiter", "Venus"],
+        answer: "Mars"
+      },
+      {
+        type: "checkbox",
+        question: "Which of the following are programming languages?",
+        options: ["Python", "Snake", "Java", "HTML"],
+        answer: ["Python", "Java", "HTML"]
+      },
+      {
+        type: "text",
+        question: "What is the capital of India?",
+        answer: "New Delhi"
+      },
+      {
+        type: "radio",
+        question: "Who wrote the National Anthem of India?",
+        options: ["Tagore", "Bose", "Nehru", "Gandhi"],
+        answer: "Tagore"
+      },
+      {
+        type: "text",
+        question: "HTML stands for?",
+        answer: "Hyper Text Markup Language"
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let feedback = [];
+
+    function loadQuestion() {
+      const quiz = quizData[currentQuestion];
+      document.getElementById("question").innerText = `Q${currentQuestion + 1}. ${quiz.question}`;
+      const optionsList = document.getElementById("options-list");
+      optionsList.innerHTML = "";
+
+      if (quiz.type === "radio") {
+        quiz.options.forEach(option => {
+          const li = document.createElement("li");
+          li.innerHTML = `<label><input type="radio" name="option" value="${option}">${option}</label>`;
+          optionsList.appendChild(li);
+        });
+      } else if (quiz.type === "checkbox") {
+        quiz.options.forEach(option => {
+          const li = document.createElement("li");
+          li.innerHTML = `<label><input type="checkbox" name="option" value="${option}">${option}</label>`;
+          optionsList.appendChild(li);
+        });
+      } else if (quiz.type === "text") {
+        const li = document.createElement("li");
+        li.innerHTML = `<input type="text" id="text-answer" placeholder="Type your answer here">`;
+        optionsList.appendChild(li);
+      }
+    }
+
+    function submitAnswer() {
+      const quiz = quizData[currentQuestion];
+      let userAnswer;
+
+      if (quiz.type === "radio") {
+        const selected = document.querySelector('input[name="option"]:checked');
+        if (!selected) return alert("Please select an option.");
+        userAnswer = selected.value;
+        userAnswer === quiz.answer
+          ? (score++, feedback.push(`Q${currentQuestion + 1}: <span class="correct">✓ Correct</span>`))
+          : feedback.push(`Q${currentQuestion + 1}: <span class="wrong">✗ Wrong (Answer: ${quiz.answer})</span>`);
+      } else if (quiz.type === "checkbox") {
+        const selected = document.querySelectorAll('input[name="option"]:checked');
+        if (selected.length === 0) return alert("Please select at least one option.");
+        userAnswer = Array.from(selected).map(input => input.value);
+        arraysMatch(userAnswer, quiz.answer)
+          ? (score++, feedback.push(`Q${currentQuestion + 1}: <span class="correct">✓ Correct</span>`))
+          : feedback.push(`Q${currentQuestion + 1}: <span class="wrong">✗ Wrong (Answer: ${quiz.answer.join(', ')})</span>`);
+      } else if (quiz.type === "text") {
+        userAnswer = document.getElementById("text-answer").value.trim();
+        if (!userAnswer) return alert("Please enter your answer.");
+        userAnswer.toLowerCase() === quiz.answer.toLowerCase()
+          ? (score++, feedback.push(`Q${currentQuestion + 1}: <span class="correct">✓ Correct</span>`))
+          : feedback.push(`Q${currentQuestion + 1}: <span class="wrong">✗ Wrong (Answer: ${quiz.answer})</span>`);
+      }
+
+      currentQuestion++;
+      if (currentQuestion < quizData.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function arraysMatch(arr1, arr2) {
+      const sorted1 = [...arr1].sort();
+      const sorted2 = [...arr2].sort();
+      return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+    }
+
+    function showResult() {
+      document.getElementById("quiz-form").style.display = "none";
+      document.getElementById("question").style.display = "none";
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = `<h3>🎉 You scored ${score} out of ${quizData.length}</h3><br>`;
+      feedback.forEach(item => {
+        const p = document.createElement("p");
+        p.innerHTML = item;
+        resultDiv.appendChild(p);
+      });
+      document.getElementById("restart-btn").classList.remove("hidden");
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      feedback = [];
+      document.getElementById("quiz-form").style.display = "block";
+      document.getElementById("question").style.display = "block";
+      document.getElementById("restart-btn").classList.add("hidden");
+      document.getElementById("result").innerHTML = "";
+      loadQuestion();
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
